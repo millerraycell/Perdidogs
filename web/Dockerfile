@@ -4,13 +4,14 @@ WORKDIR /web
 
 COPY package.json .
 
+RUN ls
+
 RUN yarn install
 
-COPY src/ .
+COPY ./src/ /web/src/
 
-COPY public/ .
-
-CMD [ "yarn", "start" ]
+COPY ./public/ /web/public/
 
 EXPOSE 3000
 
+CMD [ "yarn", "start" ]

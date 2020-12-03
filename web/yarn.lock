@@ -1613,9 +1613,9 @@
     "@testing-library/dom" "^7.28.1"
 
 "@testing-library/user-event@^12.1.10":
-  version "12.3.0"
-  resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-12.3.0.tgz#bd4edf544b70721e1996f3be36830e942c777b2b"
-  integrity sha512-A4TZofjkOH42ydTtHZcGNhwYjonkVIGBi4pmNweUgjDEGmWHuZf4k7hLd6QTL+rkSOgrd3TOCFDNyK9KO0reeA==
+  version "12.4.0"
+  resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-12.4.0.tgz#30a795e626744c17c6b1f957a228d55e1c6965a8"
+  integrity sha512-qYXcZ1uQVd6JT6TLdB1hS8WxMYVpLTkJaTZdrjI5If0J3Piv07MVlpXKgrKEubuGmlTHTK7zQ+NuSPe0g4q3ww==
   dependencies:
     "@babel/runtime" "^7.10.2"
 
@@ -10629,7 +10629,7 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typescript@^4.0.3:
+typescript@^4.1.2:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.1.2.tgz#6369ef22516fe5e10304aae5a5c4862db55380e9"
   integrity sha512-thGloWsGH3SOxv1SoY7QojKi0tc+8FnOmiarEGMbd/lar7QOEd3hvlx3Fp5y6FlDUGl9L+pd4n2e+oToGMmhRQ==
