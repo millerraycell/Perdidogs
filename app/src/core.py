@@ -26,15 +26,16 @@ def start(update: Update, context: CallbackContext):
 
     bot.send_message(
         chat_id = update.effective_chat.id,
-        text = "Anexe imagens do animal",
+        text = "Anexe imagens do animal\nQuando finalizar de enviar as fotos basta inserir /tweet",
     )
 
 def tweet(update: Update, context: CallbackContext):
     response_message = "Mensagem enviada com sucesso"
     bot: Bot = context.bot
 
-    status = api.PostUpdate('Testeeee', testes)
-    print(status)
+    position = "google.com/maps/@{},{},21z".format(update.message.location.latitude, update.message.location.longitude)
+
+    api.PostUpdate("Animal encontrado {}".format(position), testes)
 
     bot.sendMessage(chat_id=update.effective_chat.id,
                     text=response_message)
@@ -58,7 +59,6 @@ def location(update: Update, context: CallbackContext):
                 "coordinates": [update.edited_message.location.latitude, 
                                 update.edited_message.location.longitude]
             }
-            
         }
 
         collection.replace_one(
@@ -71,23 +71,15 @@ def location(update: Update, context: CallbackContext):
         user_location = {
             'user_id':   update.message.from_user.id,
             'user_name': update.message.from_user.first_name,
+            "imagens" : testes,
             "geometry": {
                 "type": "Point",
                 "coordinates": [update.message.location.latitude, 
                                 update.message.location.longitude]
-            }
-            
+            }            
         }
 
-        position = "google.com/maps/@{},{},21z".format(update.message.location.latitude, update.message.location.longitude)
-
-        local = api.PostUpdate("Testandooo {}".format(position))
-
-        print(local)
-
         collection.insert_one(user_location)
-    
-        
 
     bot.send_message(
         chat_id = update.effective_chat.id,
@@ -133,10 +125,8 @@ def main():
 if __name__ == '__main__':
     conn = MongoClient(MONGO_CONNECTION)
 
-    db = conn.geobot
-    collection = db.clientes
-
-    collection.create_index([("geometry", GEOSPHERE)])
-
+    db = conn.perdidogs
+    collection = db.animais
+    
     print("press CTRL + C to cancel.")
     main()
