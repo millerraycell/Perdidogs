@@ -4,13 +4,15 @@ WORKDIR /web
 
 COPY package.json .
 
-RUN ls
+COPY yarn.lock .
 
 RUN yarn install
 
-COPY ./src/ /web/src/
+ADD public/ /web/public
 
-COPY ./public/ /web/public/
+ADD src/ /web/src
+
+RUN ls
 
 EXPOSE 3000
 
