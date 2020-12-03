@@ -1,0 +1,50 @@
+version: '3.7'
+
+services:
+  # backend:
+  #     build: backend
+  #     ports:
+  #         - "5000:5000"
+  #     depends_on:
+  #         - redis
+  
+  # redis:
+  #   image: redis
+
+  # web:
+  #     build: web
+
+  #     ports: 
+  #       - "3000:3000"
+
+  #     networks:
+  #       - frontend-network
+
+  #     depends_on: 
+  #       - app
+
+  app:
+      build: app
+
+      networks:
+        - backend-network
+        - frontend-network
+      
+      depends_on: 
+        - db
+  db:
+    image: mongo
+    
+    restart: always
+
+    container_name: "mongo-container"
+    
+    ports: 
+      - '27017:27017'
+    
+    networks:
+      - backend-network
+  
+networks:
+  backend-network:
+  frontend-network:
