@@ -7,7 +7,6 @@ WORKDIR /app
 # copy the dependencies file to the working directory
 COPY requirements.txt .
 
-
 # install dependencies
 RUN pip3 install -r requirements.txt
 
