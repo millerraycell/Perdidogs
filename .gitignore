@@ -1,2 +1,2 @@
-app/src/env
-.env
+app/src/.env
+backend/src/.env
