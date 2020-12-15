@@ -1,0 +1,15 @@
+FROM node:14.15.1
+
+WORKDIR /web
+
+COPY package.json .
+
+COPY .env .
+
+RUN yarn install
+
+COPY ./public/ /web/public/ 
+
+COPY ./src/ /web/src/ 
+
+CMD [ "yarn", "start"]
