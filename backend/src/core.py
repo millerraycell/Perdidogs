@@ -26,7 +26,14 @@ def execucao():
         dados = []
 
         for post in collection.find():
-            dados.append(post)
+            info = {
+                "_id" : post["_id"],
+                "images" : post["imagens"],
+                "latitude" : post["geometry"]["coordinates"][0],
+                "longitude" : post["geometry"]["coordinates"][1],
+                "date" : post["date"]
+            }
+            dados.append(info)
 
         print(dados)
 
