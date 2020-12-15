@@ -52,8 +52,7 @@ def location(update: Update, context: CallbackContext):
 
     print("Mensagem nova de", update.message.from_user.first_name, update.message.location.latitude, update.message.location.longitude)
     user_location = {
-        'user_id':   update.message.from_user.id,
-        'user_name': update.message.from_user.first_name,
+        "user_id" : update.message.from_user.id,
         "imagens" : imagens,
         "geometry": {
             "type": "Point",
@@ -68,11 +67,6 @@ def location(update: Update, context: CallbackContext):
     bot.send_message(
         chat_id = update.effective_chat.id,
         text = "Localização lida com sucesso"
-    )
-
-    bot.send_message(
-        chat_id = update.effective_chat.id,
-        text = "/tweet"
     )
 
 def unknown(update: Update, context: CallbackContext):
