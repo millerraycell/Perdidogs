@@ -1,2 +1,3 @@
 app/src/.env
 backend/src/.env
+.vscode
