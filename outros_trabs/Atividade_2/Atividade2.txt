@@ -1,1 +1,0 @@
-A base da atividade 2 era criar um bot do telegram que pegasse a localização do usuário, como o trabalho 3, que é a projeto do repositório foi feito alterando o trabalho 2, não temos o código exato que enviamos, mas o trabalho 3 faz o mesmo que foi solicitado no trabalho 2
