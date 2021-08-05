@@ -34,9 +34,11 @@ def tweet(update: Update, context: CallbackContext):
 
     res = collection.find_one({"user_id":update.message.from_user.id})
 
-    position = "google.com/maps/@{},{},21z".format(res["geometry"]["coordinates"][0], res["geometry"]["coordinates"][1])
+    position = "www.google.com/maps/@{},{},21z".format(res["geometry"]["coordinates"][0], res["geometry"]["coordinates"][1])
 
-    api.PostUpdate("Animal encontrado {}".format(position), imagens)
+    print("Animal encontrado {}".format(position))
+
+    api.PostUpdate("Animal encontrado {}".format(position), media=imagens)
 
     bot.sendMessage(chat_id=update.effective_chat.id,
                     text=response_message)

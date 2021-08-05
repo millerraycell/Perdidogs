@@ -2,49 +2,49 @@ version: '3.7'
 
 services:
   database:
-      image: mongo
-      
-      restart: always
+    image: mongo
+    
+    restart: always
 
-      container_name: "mongo-container"
-      
-      ports: 
-        - '27017:27017'
+    container_name: "mongo-container"
+    
+    ports: 
+      - 27017:27017
 
-      networks:
-          - backend_network
-  
+    networks:
+      - backend_network
+
   backend:
-      build: backend
+    build: backend
 
-      networks:
-        - backend_network
-        - frontend_network 
-      ports: 
-        - '5000:5000'
-      depends_on: 
-        - database
+    networks:
+      - backend_network
+      - frontend_network 
+    ports: 
+      - '5000:5000'
+    depends_on: 
+      - database
 
   app:
     build: app
 
     networks:
       - backend_network
-    
+
     depends_on: 
       - database
 
   web:
-      build: web
+    build: web
 
-      ports: 
-        - "3000:3000"
+    ports: 
+      - "3000:3000"
 
-      networks:
-        - frontend_network
+    networks:
+      - frontend_network
 
-      depends_on: 
-        - app
+    depends_on: 
+      - app
 
 networks: 
   backend_network:
