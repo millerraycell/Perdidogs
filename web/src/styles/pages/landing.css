@@ -1,0 +1,68 @@
+#landing-page{
+    width: 100vw;
+    height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;   
+}
+
+#landing-page .content-wrapper{
+    position: relative;
+
+    width: 100%;
+    max-width: 1100px;
+
+    height: 100%;
+    max-height: 680px;
+
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: space-between;
+
+    /* background: url("../../images/perdidogs.jpeg") no-repeat 15% center; */
+}
+
+#landing-page .content-wrapper main {
+    margin-top: 50px;
+    max-width: 350px;
+}
+
+#landing-page .content-wrapper main strong{
+    font-size: 76px;
+    font-weight: 900;
+    line-height: 70px;
+}
+
+#landing-page .content-wrapper main h1{
+    margin-top: 20px;
+    font-size: 24px;
+    line-height: 34px;
+}
+
+#landing-page .enter-app{
+    margin-top: 20px;
+    width: 350px;
+    height: 30px;
+
+    margin-bottom: 100px;    
+
+    font-size: 16px;
+    text-decoration: none;
+    color: black;
+
+
+    background: rgb(240, 236, 36);
+    border-radius: 8px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: background-color 0.2s;
+}
+
+#landing-page .enter-app:hover{
+    background-color:rgb(212, 196, 53);
+} 
