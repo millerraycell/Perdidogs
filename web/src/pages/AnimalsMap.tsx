@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import {RouteComponentProps} from 'react-router'
 import {Link} from 'react-router-dom'
 import {FiArrowLeft} from 'react-icons/fi'
-import {TileLayer, Marker, MapContainer, Popup} from 'react-leaflet'
+import {TileLayer, Marker, Map, Popup} from 'react-leaflet'
 import Leaflet from 'leaflet';
 
 import '../styles/pages/animalsmap.css'
@@ -44,21 +44,25 @@ interface propriedades{
 function AnimalsMap( props : RouteComponentProps<{}, any, propriedades | any> ){
     const pos = props.location.state;
 
+    let options = {maximumAge:10000, timeout:5000, enableHighAccuracy: true}
+
     const [animal_api, setAnimal] = useState<Animal[]>([])
 
+    navigator.geolocation.getCurrentPosition((position) => {
+        pos["center"] = [position.coords.latitude, position.coords.longitude]
+        console.log(position)
+    },undefined, options)    
+
     useEffect(()=>{
-        navigator.geolocation.getCurrentPosition((position) => {
-            api.get('/')
-                .then(response => {
-                    setAnimal(response.data)
-                })
-        })    
+        api.get('/')
+            .then(response => {
+                setAnimal(response.data)
+            })
     },[])
 
     return(
         <div id="page-map">
             <aside>
-                {console.log(animal_api)}
                 <Link to="/" className="enter-app">
                     <FiArrowLeft size={26} color = 'rgba(0,0,0,0.6)'/>
                 </Link>
@@ -72,7 +76,7 @@ function AnimalsMap( props : RouteComponentProps<{}, any, propriedades | any> ){
                     <span>Roraima</span>
                 </footer>
             </aside>
-            <MapContainer
+            <Map
                 center={pos["center"]}
                 zoom = {15}
                 style = { {width:'100%', height:'100%'}}
@@ -104,7 +108,7 @@ function AnimalsMap( props : RouteComponentProps<{}, any, propriedades | any> ){
 
                     }
                 )}       
-            </MapContainer>
+            </Map>
         </div>
 
     );
