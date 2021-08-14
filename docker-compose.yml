@@ -34,17 +34,17 @@ services:
     depends_on: 
       - database
 
-  web:
-    build: web
+  # web:
+  #   build: web
 
-    ports: 
-      - "3000:3000"
+  #   ports: 
+  #     - "3000:3000"
 
-    networks:
-      - frontend_network
+  #   networks:
+  #     - frontend_network
 
-    depends_on: 
-      - app
+  #   depends_on: 
+  #     - app
 
 networks: 
   backend_network:
