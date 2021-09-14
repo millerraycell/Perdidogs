@@ -54,7 +54,7 @@ function AnimalsMap( props : RouteComponentProps<{}, any, propriedades | any> ){
     },undefined, options)    
 
     useEffect(()=>{
-        api.get('/')
+        api.get(`/?latitude=${pos["center"][0]}&longitude=${pos["center"][1]}`)
             .then(response => {
                 setAnimal(response.data)
             })
