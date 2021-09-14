@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import {RouteComponentProps} from 'react-router'
 import {Link} from 'react-router-dom'
 import {FiArrowLeft} from 'react-icons/fi'
 import {TileLayer, Marker, Map, Popup} from 'react-leaflet'
@@ -37,27 +36,25 @@ interface Animal{
     date: Date
 };
 
-interface propriedades{
-    center: [number,number]
-}
-
-function AnimalsMap( props : RouteComponentProps<{}, any, propriedades | any> ){
-    const pos = props.location.state;
-
-    let options = {maximumAge:10000, timeout:5000, enableHighAccuracy: true}
-
+function AnimalsMap(){
     const [animal_api, setAnimal] = useState<Animal[]>([])
-
-    navigator.geolocation.getCurrentPosition((position) => {
-        pos["center"] = [position.coords.latitude, position.coords.longitude]
-        console.log(position)
-    },undefined, options)    
+    const [currentPos, setCurrentPos] = useState<[number, number]>([
+        0,0
+    ])
 
     useEffect(()=>{
-        api.get(`/?latitude=${pos["center"][0]}&longitude=${pos["center"][1]}`)
-            .then(response => {
-                setAnimal(response.data)
-            })
+        navigator.geolocation.getCurrentPosition((position) =>{
+            setCurrentPos([position.coords.latitude, position.coords.longitude])
+        })
+    },[])   
+
+    useEffect(()=>{
+        navigator.geolocation.getCurrentPosition((position) => {
+            api.get(`?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`)
+                .then(response => {
+                    setAnimal(response.data)
+                })
+        })    
     },[])
 
     return(
@@ -77,7 +74,7 @@ function AnimalsMap( props : RouteComponentProps<{}, any, propriedades | any> ){
                 </footer>
             </aside>
             <Map
-                center={pos["center"]}
+                center={currentPos}
                 zoom = {15}
                 style = { {width:'100%', height:'100%'}}
                 >
@@ -88,7 +85,7 @@ function AnimalsMap( props : RouteComponentProps<{}, any, propriedades | any> ){
                 {/* <TileLayer url="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png" /> */}
 
                 <Marker
-                    position={pos["center"]}
+                    position={currentPos}
                     icon = {user_location}
                 >
                 </Marker>
