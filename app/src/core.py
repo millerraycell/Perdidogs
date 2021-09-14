@@ -24,6 +24,8 @@ collection.create_index([("geometry", GEOSPHERE)])
 #Telegram bot start
 updater = Updater(token=TELEGRAM_TOKEN, use_context=True)
 
+animal_post = {}
+
 def start(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
@@ -63,65 +65,65 @@ def start(update: Update, context: CallbackContext):
     )
 
 def post(update: Update, context: CallbackContext):
-    response_message = "Mensagem enviada com sucesso"
     bot: Bot = context.bot
 
-    collection.update_one({"chat_id": update.message.chat_id, "posted": False}, {"$set":{"posted" : True}})
-    res = collection.find_one({"chat_id":update.message.chat_id})
+    animal_post["posted"] = True
+    collection.insert_one(animal_post)
 
-    imagens = [i for i in res["imagens"]]
+    print(animal_post)
 
-    position = "www.google.com/maps/@{},{},21z".format(res["geometry"]["coordinates"][0], res["geometry"]["coordinates"][1])
+    imagens = [i for i in animal_post["images"]]
+
+    position = "www.google.com/maps/@{},{},21z".format(animal_post["geometry"]["coordinates"][0], animal_post["geometry"]["coordinates"][1])
 
     api.PostUpdate("Animal encontrado {}".format(position), media=imagens)
 
+    animal_post.clear()
+
     bot.sendMessage(
         chat_id=update.message.chat_id,
-        text=response_message
+        text="Post realizado com sucesso"
     )
-    updater.start_polling()
 
     
 def photo(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
-    if collection.find_one({"chat_id": update.message.chat_id}) == None:
-        bot.send_message(
-            chat_id = update.effective_chat.id,
-            text = "Envie a sua localização para fazer a busca"
-        )
+    fileID = update.message.photo[-1].file_id
 
+    if "images" not in animal_post.keys():
+        animal_post["images"] = [bot.get_file(fileID).file_path]
+    
     else:
-        fileID = update.message.photo[-1].file_id
+        animal_post["images"].append(bot.get_file(fileID).file_path)
 
-        collection.update_one({"chat_id": update.message.chat_id, "posted": False}, { "$push": {
-                    "imagens" : bot.get_file(fileID).file_path,
-                }
-            }
-        )
+    print(animal_post)
+
+    bot.send_message(
+        chat_id = update.effective_chat.id,
+        text = "Fotos lidas com sucesso"
+    )
     
 def location(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
-    animal_post = {
-        "chat_id" : update.message.chat_id,
-        "geometry": {
-            "type": "Point",
+    animal_post["chat_id"] = update.message.chat.id
+    animal_post["geometry"] = {
+         "type": "Point",
             "coordinates": [update.message.location.latitude, 
                             update.message.location.longitude]
-        },
-        "imagens": [],
-        "date" : datetime.datetime.utcnow(), 
-        "posted": False           
     }
+    animal_post["date"] = datetime.datetime.utcnow()
+    animal_post["posted"] = False
 
-    collection.insert_one(animal_post)
+    print(animal_post)
 
     bot.send_message(
         chat_id = update.effective_chat.id,
         text = "Localização lida com sucesso"
     )
 
+# TODO
 def show_animals_close_by(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
