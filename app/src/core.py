@@ -1,3 +1,4 @@
+# Imports
 from pymongo import MongoClient, GEOSPHERE
 import datetime
 
@@ -12,7 +13,16 @@ from config.settings import TELEGRAM_TOKEN, MONGO_CONNECTION, TWITTER_ACCESS_TOK
 
 api = twitter.Api(TWITTER_CONSUMER_TOKEN_KEY, TWITTER_CONSUMER_TOKEN_SECRET,TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET)
 
-imagens = []
+#Database Connetion
+conn = MongoClient(MONGO_CONNECTION)
+
+db = conn.perdidogs
+collection = db.animais
+
+collection.create_index([("geometry", GEOSPHERE)])
+
+#Telegram bot start
+updater = Updater(token=TELEGRAM_TOKEN, use_context=True)
 
 def start(update: Update, context: CallbackContext):
     bot: Bot = context.bot
@@ -56,60 +66,90 @@ def post(update: Update, context: CallbackContext):
     response_message = "Mensagem enviada com sucesso"
     bot: Bot = context.bot
 
-    res = collection.find_one({"user_id":update.message.from_user.id})
+    collection.update_one({"chat_id": update.message.chat_id, "posted": False}, {"$set":{"posted" : True}})
+    res = collection.find_one({"chat_id":update.message.chat_id})
+
+    imagens = [i for i in res["imagens"]]
 
     position = "www.google.com/maps/@{},{},21z".format(res["geometry"]["coordinates"][0], res["geometry"]["coordinates"][1])
-
-    print("Animal encontrado {}".format(position))
 
     api.PostUpdate("Animal encontrado {}".format(position), media=imagens)
 
     bot.sendMessage(
-        chat_id=update.effective_chat.id,
+        chat_id=update.message.chat_id,
         text=response_message
     )
+    updater.start_polling()
 
+    
 def photo(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
-    fileID = update.message.photo[-1].file_id
-    imagens.append(bot.get_file(fileID).file_path)
+    if collection.find_one({"chat_id": update.message.chat_id}) == None:
+        bot.send_message(
+            chat_id = update.effective_chat.id,
+            text = "Envie a sua localização para fazer a busca"
+        )
+
+    else:
+        fileID = update.message.photo[-1].file_id
+
+        collection.update_one({"chat_id": update.message.chat_id, "posted": False}, { "$push": {
+                    "imagens" : bot.get_file(fileID).file_path,
+                }
+            }
+        )
     
 def location(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
-    print("Mensagem nova de", update.message.from_user.first_name, update.message.location.latitude, update.message.location.longitude)
+    animal_post = {
+        "chat_id" : update.message.chat_id,
+        "geometry": {
+            "type": "Point",
+            "coordinates": [update.message.location.latitude, 
+                            update.message.location.longitude]
+        },
+        "imagens": [],
+        "date" : datetime.datetime.utcnow(), 
+        "posted": False           
+    }
 
-    if collection.find_one({"user_id": update.message.from_user.id}) != None:
-
-        collection.update_one({"user_id": update.message.from_user.id}, { "$set": {
-                    "imagens" : imagens,
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [update.message.location.latitude, 
-                                        update.message.location.longitude]
-                    },
-                    "date" : datetime.datetime.utcnow()
-                }
-            }
-        )
-    else:
-        user_location = {
-            "user_id" : update.message.from_user.id,
-            "imagens" : imagens,
-            "geometry": {
-                "type": "Point",
-                "coordinates": [update.message.location.latitude, 
-                                update.message.location.longitude]
-            },
-            "date" : datetime.datetime.utcnow()            
-        }
-        collection.insert_one(user_location)
+    collection.insert_one(animal_post)
 
     bot.send_message(
         chat_id = update.effective_chat.id,
         text = "Localização lida com sucesso"
     )
+
+def show_animals_close_by(update: Update, context: CallbackContext):
+    bot: Bot = context.bot
+
+    if collection.find_one({"chat_id": update.message.chat_id}) == None:
+        bot.send_message(
+            chat_id = update.effective_chat.id,
+            text = "Envie a sua localização para fazer a busca"
+        )
+
+    else:
+        data = collection.aggregate([{"$geoNear":{
+            "near" : {
+                "type":"Point",
+                "coordinates":[update.message.location.latitude,
+                                update.message.location.longitude]
+            },
+            "distanceField":"dist.calculated",
+            "maxDistance": 5000,
+            "spherical": True
+        }}])
+
+        # TODO: Sempre retornar os 3 primeiros animais, enviar mais depois 
+
+        for animal in data:
+            print(animal)
+
+def flush(update: Update, context: CallbackContext):
+    collection.delete_one({"chat_id": update.message.chat_id})
 
 def unknown(update: Update, context: CallbackContext):
     response_message = "Unknown command " + update.message.text
@@ -121,8 +161,6 @@ def unknown(update: Update, context: CallbackContext):
     )
 
 def main():
-    updater = Updater(token=TELEGRAM_TOKEN, use_context=True)
-
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(
@@ -131,6 +169,10 @@ def main():
     dispatcher.add_handler(
         CommandHandler('post', post)
     )
+    dispatcher.add_handler(
+        CommandHandler('flush', flush)
+    )
+    
     dispatcher.add_handler(
         MessageHandler(Filters.location, location)
     )
@@ -142,17 +184,7 @@ def main():
     )
 
     updater.start_polling()
-
     updater.idle()
 
-
-if __name__ == '__main__':
-    conn = MongoClient(MONGO_CONNECTION)
-
-    db = conn.perdidogs
-    collection = db.animais
-
-    collection.create_index([("geometry", GEOSPHERE)])
-    
-    print("press CTRL + C to cancel.")
+if __name__ == '__main__':    
     main()
