@@ -1,5 +1,3 @@
-from flask.json import jsonify
-import pymongo
 import json
 from bson import json_util
 from flask import Flask, request
@@ -21,11 +19,25 @@ db = conn.perdidogs
 collection = db.animais
 
 @app.route("/", methods=["GET", "POST"])
-def execucao():
+def index():
     if request.method == "GET":
         dados = []
 
-        for post in collection.find():
+        latitude = request.args.get("latitude", type=float)
+        longitude = request.args.get("longitude", type=float)
+        max_dist = request.args.get("max_dist", default=100000,type=int)
+
+        data = collection.aggregate([{"$geoNear":{
+            "near" : {
+                "type":"Point",
+                "coordinates":[latitude, longitude]
+            },
+            "distanceField":"dist.calculated",
+            "maxDistance": max_dist,
+            "spherical": True
+        }}])
+
+        for post in data:
             info = {
                 "_id" : post["_id"],
                 "images" : post["imagens"],
@@ -34,8 +46,6 @@ def execucao():
                 "date" : post["date"]
             }
             dados.append(info)
-
-        print(dados)
 
         return json.dumps(dados, default=str)
 
