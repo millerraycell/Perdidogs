@@ -21,9 +21,6 @@ collection = db.animais
 
 collection.create_index([("geometry", GEOSPHERE)])
 
-#Telegram bot start
-updater = Updater(token=TELEGRAM_TOKEN, use_context=True)
-
 animal_post = {}
 
 def start(update: Update, context: CallbackContext):
@@ -163,6 +160,7 @@ def unknown(update: Update, context: CallbackContext):
     )
 
 def main():
+    updater = Updater(token=TELEGRAM_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(
