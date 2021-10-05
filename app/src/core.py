@@ -1,8 +1,11 @@
 # Imports
+from bson import json_util
 from pymongo import MongoClient, GEOSPHERE
 import datetime
 
-from telegram.ext import CommandHandler, Filters, MessageHandler, Updater 
+from telegram.ext import CommandHandler, Filters, MessageHandler, Updater, CallbackQueryHandler
+from telegram.inline.inlinekeyboardbutton import InlineKeyboardButton
+from telegram.inline.inlinekeyboardmarkup import InlineKeyboardMarkup 
 from telegram.update import Update
 from telegram.bot import Bot
 from telegram.ext.callbackcontext import CallbackContext
@@ -20,6 +23,8 @@ db = conn.perdidogs
 collection = db.animais
 
 collection.create_index([("geometry", GEOSPHERE)])
+
+post_collection = db.posts
 
 animal_post = {}
 
@@ -69,7 +74,7 @@ def post(update: Update, context: CallbackContext):
 
     print(animal_post)
 
-    imagens = [i for i in animal_post["images"]]
+    imagens = [bot.get_file(i).file_path for i in animal_post["images"]]
 
     position = "www.google.com/maps/@{},{},21z".format(animal_post["geometry"]["coordinates"][0], animal_post["geometry"]["coordinates"][1])
 
@@ -87,12 +92,13 @@ def photo(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
     fileID = update.message.photo[-1].file_id
+    print(fileID)
 
     if "images" not in animal_post.keys():
-        animal_post["images"] = [bot.get_file(fileID).file_path]
+        animal_post["images"] = [fileID]
     
     else:
-        animal_post["images"].append(bot.get_file(fileID).file_path)
+        animal_post["images"].append(fileID)
 
     print(animal_post)
 
@@ -106,14 +112,12 @@ def location(update: Update, context: CallbackContext):
 
     animal_post["chat_id"] = update.message.chat.id
     animal_post["geometry"] = {
-         "type": "Point",
-            "coordinates": [update.message.location.latitude, 
+        "type": "Point",
+        "coordinates": [update.message.location.latitude, 
                             update.message.location.longitude]
     }
     animal_post["date"] = datetime.datetime.utcnow()
     animal_post["posted"] = False
-
-    print(animal_post)
 
     bot.send_message(
         chat_id = update.effective_chat.id,
@@ -124,31 +128,56 @@ def location(update: Update, context: CallbackContext):
 def show_animals_close_by(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
-    if collection.find_one({"chat_id": update.message.chat_id}) == None:
+    if "geometry" not in animal_post.keys():
         bot.send_message(
             chat_id = update.effective_chat.id,
-            text = "Envie a sua localização para fazer a busca"
+            text= "Envie a sua localização para fazer a busca dos animais"
         )
 
     else:
         data = collection.aggregate([{"$geoNear":{
             "near" : {
                 "type":"Point",
-                "coordinates":[update.message.location.latitude,
-                                update.message.location.longitude]
+                "coordinates":[animal_post["geometry"]["coordinates"][0],
+                            animal_post["geometry"]["coordinates"][1]]
             },
             "distanceField":"dist.calculated",
             "maxDistance": 5000,
             "spherical": True
         }}])
 
-        # TODO: Sempre retornar os 3 primeiros animais, enviar mais depois 
-
         for animal in data:
-            print(animal)
+            keyboard = [
+                [
+                    InlineKeyboardButton("Sim", callback_data= json_util.dumps(animal["_id"])),
+                    InlineKeyboardButton("Não", callback_data='2'),
+                ]
+            ]
 
-def flush(update: Update, context: CallbackContext):
-    collection.delete_one({"chat_id": update.message.chat_id})
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            bot.sendPhoto(
+                chat_id = update.effective_chat.id,
+                photo = animal["images"][0]
+            )
+            bot.sendMessage(
+                chat_id = update.effective_chat.id,
+                text = "Você encontrou ese animal?",
+                reply_markup = reply_markup
+            )
+
+def button(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.answer
+
+    choice = query.data
+
+    if choice != "2":
+        post_collection.insert_one({
+            "id_post" : choice,
+            "user_id" : update.message.from_user.id
+        })
+
 
 def unknown(update: Update, context: CallbackContext):
     response_message = "Unknown command " + update.message.text
@@ -170,7 +199,11 @@ def main():
         CommandHandler('post', post)
     )
     dispatcher.add_handler(
-        CommandHandler('flush', flush)
+        CommandHandler('near_animals', show_animals_close_by)
+    )
+
+    dispatcher.add_handler(
+        CallbackQueryHandler(button)
     )
     
     dispatcher.add_handler(
