@@ -1,5 +1,5 @@
 # Imports
-from bson import json_util
+from bson.objectid import ObjectId
 from pymongo import MongoClient, GEOSPHERE
 import datetime
 
@@ -21,10 +21,9 @@ conn = MongoClient(MONGO_CONNECTION)
 
 db = conn.perdidogs
 collection = db.animais
+post_collection = db.posts
 
 collection.create_index([("geometry", GEOSPHERE)])
-
-post_collection = db.posts
 
 animal_post = {}
 
@@ -86,8 +85,7 @@ def post(update: Update, context: CallbackContext):
         chat_id=update.message.chat_id,
         text="Post realizado com sucesso"
     )
-
-    
+  
 def photo(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
@@ -100,8 +98,13 @@ def photo(update: Update, context: CallbackContext):
     else:
         animal_post["images"].append(fileID)
 
-    print(animal_post)
+    if len(animal_post["images"]) > 4:
+        animal_post["images"] = []
 
+        bot.send_message(
+            chat_id = update.effective_chat.id,
+            text = "Máximo de 4 fotos"
+        )
     bot.send_message(
         chat_id = update.effective_chat.id,
         text = "Fotos lidas com sucesso"
@@ -135,6 +138,7 @@ def show_animals_close_by(update: Update, context: CallbackContext):
         )
 
     else:
+
         data = collection.aggregate([{"$geoNear":{
             "near" : {
                 "type":"Point",
@@ -146,10 +150,14 @@ def show_animals_close_by(update: Update, context: CallbackContext):
             "spherical": True
         }}])
 
-        for animal in data:
+        animals = [i for i in data]
+
+        user = [i for i in post_collection.find({"user_id":update._effective_user.id})]
+
+        if len(user) == 0:
             keyboard = [
                 [
-                    InlineKeyboardButton("Sim", callback_data= json_util.dumps(animal["_id"])),
+                    InlineKeyboardButton("Sim", callback_data= str(animals[0]["_id"])),
                     InlineKeyboardButton("Não", callback_data='2'),
                 ]
             ]
@@ -158,7 +166,7 @@ def show_animals_close_by(update: Update, context: CallbackContext):
 
             bot.sendPhoto(
                 chat_id = update.effective_chat.id,
-                photo = animal["images"][0]
+                photo = animals[0]["images"][0]
             )
             bot.sendMessage(
                 chat_id = update.effective_chat.id,
@@ -166,17 +174,66 @@ def show_animals_close_by(update: Update, context: CallbackContext):
                 reply_markup = reply_markup
             )
 
-def button(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer
+        else:
+            user_posts = [post["post_id"] for post in user]
 
-    choice = query.data
+            votable_animals = 0
+
+            for i in animals:
+                if i["_id"] not in user_posts:
+                    keyboard = [
+                        [
+                            InlineKeyboardButton("Sim", callback_data= str(i["_id"])),
+                            InlineKeyboardButton("Não", callback_data='2'),
+                        ]
+                    ]
+
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+
+                    bot.sendPhoto(
+                        chat_id = update.effective_chat.id,
+                        photo = i["images"][0]
+                    )
+                    bot.sendMessage(
+                        chat_id = update.effective_chat.id,
+                        text = "Você encontrou ese animal?",
+                        reply_markup = reply_markup
+                    )
+
+                    votable_animals = 1
+                    break
+
+            if not votable_animals:
+                bot.sendMessage(
+                    chat_id = update.effective_chat.id,
+                    text = "Sem animais disponíveis para votar na sua região",
+                )
+
+
+def button(update: Update, context: CallbackContext):
+    bot: Bot = context.bot
+
+    query = update.callback_query
+    choice = ObjectId(query.data)
 
     if choice != "2":
         post_collection.insert_one({
-            "id_post" : choice,
-            "user_id" : update.message.from_user.id
+            "user_id" : update.effective_user.id,
+            "post_id" : choice
         })
+
+        verification = post_collection.count_documents({"post_id": choice})
+
+        print(verification)
+
+        if verification >= 10:
+            collection.find_one_and_delete({"_id":choice})
+
+
+    bot.sendMessage(
+        chat_id = update.effective_chat.id,
+        text = "Obrigado por sua participação",
+    )
 
 
 def unknown(update: Update, context: CallbackContext):
