@@ -71,8 +71,6 @@ def post(update: Update, context: CallbackContext):
     animal_post["posted"] = True
     collection.insert_one(animal_post)
 
-    print(animal_post)
-
     imagens = [bot.get_file(i).file_path for i in animal_post["images"]]
 
     position = "www.google.com/maps/@{},{},21z".format(animal_post["geometry"]["coordinates"][0], animal_post["geometry"]["coordinates"][1])
@@ -90,7 +88,6 @@ def photo(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
     fileID = update.message.photo[-1].file_id
-    print(fileID)
 
     if "images" not in animal_post.keys():
         animal_post["images"] = [fileID]
@@ -127,7 +124,6 @@ def location(update: Update, context: CallbackContext):
         text = "Localização lida com sucesso"
     )
 
-# TODO
 def show_animals_close_by(update: Update, context: CallbackContext):
     bot: Bot = context.bot
 
